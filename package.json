@@ -1,0 +1,7 @@
+{
+  "name": "com.newblood.core",
+  "displayName": "New Blood Core Library",
+  "description": "A collection of general APIs to assist development.",
+  "version": "1.0.0",
+  "type": "library"
+}
