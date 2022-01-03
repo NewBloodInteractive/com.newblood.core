@@ -1,18 +1,22 @@
-﻿namespace NewBlood
+﻿#nullable enable
+using System.Diagnostics.CodeAnalysis;
+
+namespace NewBlood
 {
     /// <summary>Provides a resource pool that enables reusing instances.</summary>
     public interface IPool<T>
+        where T : class
     {
-        /// <summary>Gets the number of instances currently available for rental.</summary>
+        /// <summary>The number of objects that the pool is capable of storing.</summary>
+        int Capacity { get; }
+
+        /// <summary>The number of objects currently stored in the pool.</summary>
         int Count { get; }
 
-        /// <summary>Rents a value from the pool.</summary>
-        T Rent();
+        /// <summary>Requests an object from the pool.</summary>
+        bool TryRent([NotNullWhen(true)] out T? obj);
 
-        /// <summary>Returns a value to the pool.</summary>
-        void Return(T value);
-
-        /// <summary>Prepares the pool to rent a specified number of instances.</summary>
-        void Prepare(int count);
+        /// <summary>Returns an object to the pool.</summary>
+        bool TryReturn(T obj);
     }
 }

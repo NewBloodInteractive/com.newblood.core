@@ -1,5 +1,8 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace NewBlood
@@ -9,49 +12,146 @@ namespace NewBlood
     {
         bool disposed;
 
+        // The hierarchy size of a new object.
+        readonly int objectHierarchyCount;
+
+        // An optional prefab to use for constructing new objects.
+        readonly GameObject? prefab;
+
+        // An optional policy for defining rent and return behaviour.
+        readonly IPoolPolicy<GameObject>? policy;
+
+        // A persistent, hidden game object acting as a container for pooled objects.
+        // It will remain in the DontDestroyOnLoad scene until the pool is disposed of.
+        //
+        // This object is always disabled, ensuring that its child objects are also
+        // disabled without requiring manual SetActive calls each time they are rented
+        // and returned to the pool.
+        //
         readonly Transform container;
-
-        readonly GameObject prefab;
-
-        /// <summary>Gets the number of objects currently available for rental.</summary>
-        public int Count => container.childCount;
 
         /// <summary>Initializes a new <see cref="GameObjectPool"/> instance.</summary>
         public GameObjectPool()
+            : this(null, null)
         {
-            container = ObjectPool.CreateContainer(nameof(GameObjectPool));
         }
 
-        /// <summary>Initializes a new <see cref="GameObjectPool"/> instance with the given prefab.</summary>
-        public GameObjectPool(GameObject prefab)
-            : this()
+        /// <summary>Initializes a new <see cref="GameObjectPool"/> instance.</summary>
+        public GameObjectPool(GameObject? prefab)
+            : this(prefab, null)
+        {
+        }
+
+        /// <summary>Initializes a new <see cref="GameObjectPool"/> instance.</summary>
+        public GameObjectPool(GameObject? prefab, IPoolPolicy<GameObject>? policy)
         {
             this.prefab = prefab;
+            this.policy = policy;
+            container   = CreateContainer();
+
+            if (prefab == null)
+                objectHierarchyCount = 1;
+            else
+                objectHierarchyCount = prefab.transform.hierarchyCount;
         }
 
-        /// <summary>Prepares the pool to rent a specified number of instances.</summary>
-        public void Prepare(int count)
+        /// <inheritdoc/>
+        public int Capacity
         {
-            ThrowIfDisposed();
-
-            for (int i = 0; i < count; i++)
+            get
             {
-                ObjectPool.CreateGameObject(prefab, container);
+                ThrowIfDisposed();
+                return GetCapacity();
+            }
+
+            set
+            {
+                ThrowIfDisposed();
+
+                if (value < 0 || value < container.childCount)
+                    throw new ArgumentOutOfRangeException();
+
+                SetCapacity(value);
             }
         }
 
-        /// <summary>Rents a <see cref="GameObject"/> from the pool.</summary>
+        /// <inheritdoc/>
+        public int Count
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return container.childCount;
+            }
+
+            set
+            {
+                ThrowIfDisposed();
+
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException();
+
+                SetCount(value);
+            }
+        }
+
+        /// <summary>Requests a new object from the pool.</summary>
         public GameObject Rent()
         {
             ThrowIfDisposed();
-            return ObjectPool.RentOrCreateGameObject(prefab, container);
+            Transform transform;
+            GameObject gameObject;
+
+            // The container stores all of our pooled objects, so first check that.
+            int count = container.childCount;
+
+            if (count == 0)
+            {
+                gameObject = Create();
+                transform  = gameObject.transform;
+            }
+            else
+            {
+                // It is less expensive to detach the last child in the hierarchy.
+                // Children further up require reordering the internal structures.
+                transform  = container.GetChild(count - 1);
+                gameObject = transform.gameObject;
+            }
+
+            // Detach the object from the container and move it to the active scene.
+            // This will activate the object, causing the OnEnable event to be raised.
+            transform.SetParent(null);
+            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+
+            // If we have a policy defined, allow it to process the rental.
+            policy?.Rent(gameObject);
+            return gameObject;
         }
 
-        /// <summary>Returns a <see cref="GameObject"/> to the pool.</summary>
-        public void Return(GameObject rental)
+        /// <summary>Returns an object to the pool.</summary>
+        public void Return(GameObject obj)
         {
             ThrowIfDisposed();
-            rental.transform.SetParent(container);
+
+            // If we have a policy defined, allow it to process the return.
+            policy?.Return(obj);
+
+            // Attach the object to the container. This will deactivate the object.
+            obj.transform.SetParent(container);
+        }
+
+        /// <inheritdoc/>
+        bool IPool<GameObject>.TryRent([NotNullWhen(true)] out GameObject? obj)
+        {
+            obj = Rent();
+            return true;
+        }
+
+        /// <inheritdoc/>
+        bool IPool<GameObject>.TryReturn(GameObject obj)
+        {
+            Return(obj);
+            return true;
         }
 
         /// <inheritdoc/>
@@ -64,6 +164,92 @@ namespace NewBlood
             disposed = true;
         }
 
+        /// <summary>Creates a new pooled object.</summary>
+        GameObject Create()
+        {
+            GameObject gameObject;
+
+            if (prefab != null)
+            {
+                gameObject      = Object.Instantiate(prefab, container);
+                gameObject.name = prefab.name;
+            }
+            else
+            {
+                gameObject = new GameObject();
+                gameObject.transform.SetParent(container);
+            }
+
+            return gameObject;
+        }
+
+        /// <summary>Gets the amount of objects the pool is capable of storing.</summary>
+        int GetCapacity()
+        {
+            var remaining = container.hierarchyCapacity - container.hierarchyCount;
+            return container.childCount + (remaining / objectHierarchyCount);
+        }
+
+        /// <summary>Expands or shrinks the pool to contain the requested number of objects.</summary>
+        void SetCount(int count)
+        {
+            int difference = count - container.childCount;
+
+            if (difference == 0)
+                return;
+
+            // Positive difference, we need to create more objects.
+            if (difference > 0)
+            {
+                if (GetCapacity() < count)
+                    SetCapacity(count);
+
+                for (int i = 0; i < difference; i++)
+                    Create();
+            }
+
+            // Negative difference, we need to delete some objects.
+            if (difference < 0)
+            {
+                for (int i = 0; i > difference; i--)
+                {
+                    var index = container.childCount - 1 + i;
+                    var child = container.GetChild(index);
+                    Object.Destroy(child.gameObject);
+                }
+            }
+        }
+
+        /// <summary>Modifies the hierarchy capacity of the container object to fit the requested number of objects.</summary>
+        void SetCapacity(int capacity)
+        {
+            int difference = capacity - GetCapacity();
+
+            if (difference == 0)
+                return;
+
+            // If there is some extra hierarchy space remaining, use that up.
+            int currentCapacity   = container.hierarchyCapacity;
+            int remainingCapacity = currentCapacity - container.hierarchyCount;
+
+            // Increase the hierarchy capacity to fit the requested number of objects.
+            container.hierarchyCapacity = currentCapacity + (difference * objectHierarchyCount) - remainingCapacity;
+        }
+
+        /// <summary>Creates a new container object for pooled objects.</summary>
+        static Transform CreateContainer()
+        {
+            var gameObject = new GameObject(nameof(GameObjectPool))
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            Object.DontDestroyOnLoad(gameObject);
+            gameObject.SetActive(false);
+            return gameObject.transform;
+        }
+
+        /// <summary>Throws <see cref="ObjectDisposedException"/> if the pool has been disposed.</summary>
         void ThrowIfDisposed()
         {
             if (disposed)
