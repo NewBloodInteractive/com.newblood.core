@@ -1,6 +1,4 @@
-﻿#nullable enable
-using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -16,10 +14,10 @@ namespace NewBlood
         readonly int objectHierarchyCount;
 
         // An optional prefab to use for constructing new objects.
-        readonly GameObject? prefab;
+        readonly GameObject prefab;
 
         // An optional policy for defining rent and return behaviour.
-        readonly IPoolPolicy<GameObject>? policy;
+        readonly IPoolPolicy<GameObject> policy;
 
         // A persistent, hidden game object acting as a container for pooled objects.
         // It will remain in the DontDestroyOnLoad scene until the pool is disposed of.
@@ -37,13 +35,13 @@ namespace NewBlood
         }
 
         /// <summary>Initializes a new <see cref="GameObjectPool"/> instance.</summary>
-        public GameObjectPool(GameObject? prefab)
+        public GameObjectPool(GameObject prefab)
             : this(prefab, null)
         {
         }
 
         /// <summary>Initializes a new <see cref="GameObjectPool"/> instance.</summary>
-        public GameObjectPool(GameObject? prefab, IPoolPolicy<GameObject>? policy)
+        public GameObjectPool(GameObject prefab, IPoolPolicy<GameObject> policy)
         {
             this.prefab = prefab;
             this.policy = policy;
@@ -141,7 +139,7 @@ namespace NewBlood
         }
 
         /// <inheritdoc/>
-        bool IPool<GameObject>.TryRent([NotNullWhen(true)] out GameObject? obj)
+        bool IPool<GameObject>.TryRent(out GameObject obj)
         {
             obj = Rent();
             return true;
