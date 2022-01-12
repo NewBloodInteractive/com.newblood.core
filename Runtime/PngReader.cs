@@ -7,7 +7,7 @@ namespace NewBlood
     public struct PngReader
     {
         /// <summary>The reader's current offset into <see cref="Buffer"/>.</summary>
-        public int Offset { get; private set; }
+        int position;
 
         /// <summary>The buffer containing the PNG image to read.</summary>
         public ArraySegment<byte> Buffer { get; }
@@ -27,8 +27,8 @@ namespace NewBlood
         /// <summary>Initializes a new <see cref="PngReader"/> instance.</summary>
         PngReader(ArraySegment<byte> buffer, int offset)
         {
-            Buffer = buffer;
-            Offset = offset;
+            Buffer   = buffer;
+            position = offset;
         }
 
         /// <summary>Initializes a new <see cref="PngReader"/> instance.</summary>
@@ -54,14 +54,14 @@ namespace NewBlood
             if (!TryPeekChunk(out chunk))
                 return false;
 
-            Offset += chunk.Length + 12;
+            position += chunk.Length + 12;
             return true;
         }
 
         /// <summary>Peeks the next chunk from the image.</summary>
         public bool TryPeekChunk(out PngChunk chunk)
         {
-            var slice = new ArraySegment<byte>(Buffer.Array, Buffer.Offset + Offset, Buffer.Count - Offset);
+            var slice = new ArraySegment<byte>(Buffer.Array, Buffer.Offset + position, Buffer.Count - position);
 
             // A chunk contains a 32-bit length, a 32-bit ID, and a 32-bit CRC after the data.
             // The minimum size of a chunk is therefore 12 bytes, when the data length is zero.
@@ -77,12 +77,18 @@ namespace NewBlood
             if (!BinaryPrimitives.TryReadUInt32BigEndian(slice.AsSpan(8 + length), out uint crc))
                 goto Failure;
 
-            chunk = new PngChunk(id, crc, Offset + 8, length);
+            chunk = new PngChunk(id, crc, position + 8, length);
             return true;
 
         Failure:
             chunk = default;
             return false;
+        }
+
+        /// <summary>Resets the reader.</summary>
+        public void Reset()
+        {
+            position = 8;
         }
 
         /// <summary>Returns a slice of <see cref="Buffer"/> containing the chunk data.</summary>
