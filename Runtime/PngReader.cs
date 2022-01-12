@@ -51,6 +51,16 @@ namespace NewBlood
         /// <summary>Reads the next chunk from the image.</summary>
         public bool TryReadChunk(out PngChunk chunk)
         {
+            if (!TryPeekChunk(out chunk))
+                return false;
+
+            Offset += chunk.Length + 12;
+            return true;
+        }
+
+        /// <summary>Peeks the next chunk from the image.</summary>
+        public bool TryPeekChunk(out PngChunk chunk)
+        {
             var slice = new ArraySegment<byte>(Buffer.Array, Buffer.Offset + Offset, Buffer.Count - Offset);
 
             // A chunk contains a 32-bit length, a 32-bit ID, and a 32-bit CRC after the data.
@@ -67,8 +77,7 @@ namespace NewBlood
             if (!BinaryPrimitives.TryReadUInt32BigEndian(slice.AsSpan(8 + length), out uint crc))
                 goto Failure;
 
-            chunk   = new PngChunk(id, crc, Offset + 8, length);
-            Offset += length + 12;
+            chunk = new PngChunk(id, crc, Offset + 8, length);
             return true;
 
         Failure:
