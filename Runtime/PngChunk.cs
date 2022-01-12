@@ -24,6 +24,12 @@
         /// <summary>Returns a value indicating whether this chunk is safe to copy.</summary>
         public bool IsCopyable => (Id & (1 << 29)) != 0;
 
+        /// <summary>Creates a chunk ID from four characters.</summary>
+        public static uint CreateId(char a, char b, char c, char d)
+        {
+            return (uint)((a << 24) | (b << 16) | (c << 8) | d);
+        }
+
         /// <summary>Initializes a new <see cref="PngChunk"/> instance.</summary>
         public PngChunk(uint id, uint crc, int offset, int length)
         {
