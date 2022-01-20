@@ -35,10 +35,10 @@ namespace NewBlood
                 // that it won't be considered an active game object until we want it to be.
                 gameObject.transform.SetParent(root.transform);
 
-                // If the component is a MonoSingleton, we can call MakeCurrent to make it globally available.
-                if (gameObject.AddComponent(attribute.ComponentType) is MonoSingleton singleton)
+                // If the component implements IPersistentObject, we should call Initialize.
+                if (gameObject.AddComponent(attribute.ComponentType) is IPersistentObject persistent)
                 {
-                    singleton.MakeCurrent();
+                    persistent.Initialize();
                 }
             }
 
