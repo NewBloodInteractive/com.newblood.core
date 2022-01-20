@@ -77,7 +77,7 @@ namespace NewBlood
             if (!BinaryPrimitives.TryReadUInt32BigEndian(slice.AsSpan(8 + length), out uint crc))
                 goto Failure;
 
-            chunk = new PngChunk(id, crc, position + 8, length);
+            chunk = new PngChunk(id, ~crc, position + 8, length);
             return true;
 
         Failure:

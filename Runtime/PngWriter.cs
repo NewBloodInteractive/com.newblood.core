@@ -39,7 +39,7 @@ namespace NewBlood
             BinaryPrimitives.WriteInt32BigEndian(destination, buffer.Length);
             BinaryPrimitives.WriteUInt32BigEndian(destination.Slice(4), id);
             buffer.CopyTo(destination.Slice(8));
-            BinaryPrimitives.WriteUInt32BigEndian(destination.Slice(8 + buffer.Length), crc);
+            BinaryPrimitives.WriteUInt32BigEndian(destination.Slice(8 + buffer.Length), ~crc);
             Writer.Advance(buffer.Length + 12);
         }
     }
