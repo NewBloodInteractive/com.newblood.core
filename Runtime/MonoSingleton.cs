@@ -4,7 +4,7 @@ namespace NewBlood
 {
     /// <summary>Base type for the <see cref="MonoSingleton{TSelf}"/> class.</summary>
     [DisallowMultipleComponent]
-    public abstract class MonoSingleton : MonoBehaviour
+    public abstract class MonoSingleton : MonoBehaviour, IPersistentObject
     {
         // This class provides a method to initialize singletons in a non-generic fashion,
         // so the only class that should derive from it is the MonoSingleton<TSelf> class.
@@ -14,6 +14,12 @@ namespace NewBlood
 
         /// <summary>Makes this component the global instance.</summary>
         public abstract void MakeCurrent();
+
+        /// <inheritdoc/>
+        void IPersistentObject.Initialize()
+        {
+            MakeCurrent();
+        }
     }
 
     /// <summary>Base type for singleton <see cref="MonoBehaviour"/> classes.</summary>

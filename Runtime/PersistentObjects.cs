@@ -19,10 +19,10 @@ namespace NewBlood
             // that it won't be considered an active game object until we want it to be.
             var instance = Object.Instantiate(prefab, root.transform);
 
-            // Initialize any MonoSingleton components that exist in the hierarchy.
-            foreach (var singleton in instance.GetComponentsInChildren<MonoSingleton>(includeInactive: true))
+            // Initialize any IPersistentObject components that exist in the hierarchy.
+            foreach (var persistent in instance.GetComponentsInChildren<IPersistentObject>(includeInactive: true))
             {
-                singleton.MakeCurrent();
+                persistent.Initialize();
             }
 
             // DontDestroyOnLoad will move the root object to a special scene for persistent objects.
