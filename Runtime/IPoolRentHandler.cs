@@ -1,4 +1,5 @@
-﻿using UnityEngine.EventSystems;
+﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace NewBlood
 {
@@ -6,6 +7,6 @@ namespace NewBlood
     public interface IPoolRentHandler : IEventSystemHandler
     {
         /// <summary>Callback for when the object is rented.</summary>
-        void OnRent();
+        void OnRent(IPool<GameObject> pool);
     }
 }

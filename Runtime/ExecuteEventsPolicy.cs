@@ -21,31 +21,41 @@ namespace NewBlood
         }
 
         /// <inheritdoc/>
-        public void Rent(GameObject obj)
+        public void Rent(GameObject obj, IPool<GameObject> pool)
         {
             if (mode == ExecuteEventsMode.Execute)
-                ExecuteEvents.Execute<IPoolRentHandler>(obj, null, ExecuteOnRent);
+                ExecuteEvents.Execute<IPoolRentHandler>(obj, new PoolEventData(EventSystem.current) { Pool = pool }, ExecuteOnRent);
             else if (mode == ExecuteEventsMode.ExecuteHierarchy)
-                ExecuteEvents.ExecuteHierarchy<IPoolRentHandler>(obj, null, ExecuteOnRent);
+                ExecuteEvents.ExecuteHierarchy<IPoolRentHandler>(obj, new PoolEventData(EventSystem.current) { Pool = pool }, ExecuteOnRent);
         }
 
         /// <inheritdoc/>
-        public void Return(GameObject obj)
+        public void Return(GameObject obj, IPool<GameObject> pool)
         {
             if (mode == ExecuteEventsMode.Execute)
-                ExecuteEvents.Execute<IPoolReturnHandler>(obj, null, ExecuteOnReturn);
+                ExecuteEvents.Execute<IPoolReturnHandler>(obj, new PoolEventData(EventSystem.current) { Pool = pool }, ExecuteOnReturn);
             else if (mode == ExecuteEventsMode.ExecuteHierarchy)
-                ExecuteEvents.ExecuteHierarchy<IPoolReturnHandler>(obj, null, ExecuteOnReturn);
+                ExecuteEvents.ExecuteHierarchy<IPoolReturnHandler>(obj, new PoolEventData(EventSystem.current) { Pool = pool }, ExecuteOnReturn);
         }
 
         static void ExecuteOnRent(IPoolRentHandler handler, BaseEventData data)
         {
-            handler.OnRent();
+            handler.OnRent(((PoolEventData)data).Pool);
         }
 
         static void ExecuteOnReturn(IPoolReturnHandler handler, BaseEventData data)
         {
-            handler.OnReturn();
+            handler.OnReturn(((PoolEventData)data).Pool);
+        }
+
+        sealed class PoolEventData : BaseEventData
+        {
+            public IPool<GameObject> Pool { get; set; }
+
+            public PoolEventData(EventSystem eventSystem)
+                : base(eventSystem)
+            {
+            }
         }
     }
 }

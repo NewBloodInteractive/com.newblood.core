@@ -1,4 +1,5 @@
-﻿using UnityEngine.EventSystems;
+﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace NewBlood
 {
@@ -6,6 +7,6 @@ namespace NewBlood
     public interface IPoolReturnHandler : IEventSystemHandler
     {
         /// <summary>Callback for when the object is returned.</summary>
-        void OnReturn();
+        void OnReturn(IPool<GameObject> pool);
     }
 }

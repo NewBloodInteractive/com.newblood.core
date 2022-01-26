@@ -20,15 +20,15 @@ namespace NewBlood
         public const string OnReturnMessage = "OnReturn";
 
         /// <inheritdoc/>
-        public void Rent(GameObject obj)
+        public void Rent(GameObject obj, IPool<GameObject> pool)
         {
-            obj.SendMessage(OnRentMessage, options);
+            obj.SendMessage(OnRentMessage, pool, options);
         }
 
         /// <inheritdoc/>
-        public void Return(GameObject obj)
+        public void Return(GameObject obj, IPool<GameObject> pool)
         {
-            obj.SendMessage(OnReturnMessage, options);
+            obj.SendMessage(OnReturnMessage, pool, options);
         }
 
         /// <summary>Initializes a new <see cref="SendMessagePolicy"/> instance.</summary>

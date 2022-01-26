@@ -122,7 +122,7 @@ namespace NewBlood
             SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
 
             // If we have a policy defined, allow it to process the rental.
-            policy?.Rent(gameObject);
+            policy?.Rent(gameObject, this);
             return gameObject;
         }
 
@@ -132,7 +132,7 @@ namespace NewBlood
             ThrowIfDisposed();
 
             // If we have a policy defined, allow it to process the return.
-            policy?.Return(obj);
+            policy?.Return(obj, this);
 
             // Attach the object to the container. This will deactivate the object.
             obj.transform.SetParent(container);
