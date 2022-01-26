@@ -102,7 +102,7 @@ namespace NewBlood
 
             // Detach the object from the container and move it to the active scene.
             // This will activate the object, causing the OnEnable event to be raised.
-            transform.SetParent(null);
+            transform.SetParent(null, worldPositionStays: true);
             SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
 
             // If we have a policy defined, allow it to process the rental.
@@ -117,7 +117,7 @@ namespace NewBlood
             var gameObject = GetNextRental();
             var transform  = gameObject.transform;
             callback(gameObject, state);
-            transform.SetParent(null);
+            transform.SetParent(null, worldPositionStays: true);
             SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
             policy?.Rent(gameObject, this);
             return gameObject;
@@ -159,7 +159,7 @@ namespace NewBlood
             policy?.Return(obj, this);
 
             // Attach the object to the container. This will deactivate the object.
-            obj.transform.SetParent(container);
+            obj.transform.SetParent(container, worldPositionStays: true);
         }
 
         GameObject GetNextRental()
