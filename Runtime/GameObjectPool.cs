@@ -111,12 +111,39 @@ namespace NewBlood
         }
 
         /// <summary>Requests a new object from the pool.</summary>
+        public GameObject Rent<TState>(TState state, Action<GameObject, TState> callback)
+        {
+            ThrowIfDisposed();
+            var gameObject = GetNextRental();
+            var transform  = gameObject.transform;
+            callback(gameObject, state);
+            transform.SetParent(null);
+            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+            policy?.Rent(gameObject, this);
+            return gameObject;
+        }
+
+        /// <summary>Requests a new object from the pool.</summary>
         public GameObject Rent(Vector3 position, Quaternion rotation, Transform parent)
         {
             ThrowIfDisposed();
             var gameObject = GetNextRental();
             var transform  = gameObject.transform;
             transform.SetPositionAndRotation(position, rotation);
+            transform.SetParent(parent, worldPositionStays: true);
+            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+            policy?.Rent(gameObject, this);
+            return gameObject;
+        }
+
+        /// <summary>Requests a new object from the pool.</summary>
+        public GameObject Rent<TState>(Vector3 position, Quaternion rotation, Transform parent, TState state, Action<GameObject, TState> callback)
+        {
+            ThrowIfDisposed();
+            var gameObject = GetNextRental();
+            var transform = gameObject.transform;
+            transform.SetPositionAndRotation(position, rotation);
+            callback(gameObject, state);
             transform.SetParent(parent, worldPositionStays: true);
             SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
             policy?.Rent(gameObject, this);
