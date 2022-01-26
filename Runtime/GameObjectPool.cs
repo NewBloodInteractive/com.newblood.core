@@ -97,24 +97,8 @@ namespace NewBlood
         public GameObject Rent()
         {
             ThrowIfDisposed();
-            Transform transform;
-            GameObject gameObject;
-
-            // The container stores all of our pooled objects, so first check that.
-            int count = container.childCount;
-
-            if (count == 0)
-            {
-                gameObject = Create();
-                transform  = gameObject.transform;
-            }
-            else
-            {
-                // It is less expensive to detach the last child in the hierarchy.
-                // Children further up require reordering the internal structures.
-                transform  = container.GetChild(count - 1);
-                gameObject = transform.gameObject;
-            }
+            var gameObject = GetNextRental();
+            var transform  = gameObject.transform;
 
             // Detach the object from the container and move it to the active scene.
             // This will activate the object, causing the OnEnable event to be raised.
@@ -122,6 +106,19 @@ namespace NewBlood
             SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
 
             // If we have a policy defined, allow it to process the rental.
+            policy?.Rent(gameObject, this);
+            return gameObject;
+        }
+
+        /// <summary>Requests a new object from the pool.</summary>
+        public GameObject Rent(Vector3 position, Quaternion rotation, Transform parent)
+        {
+            ThrowIfDisposed();
+            var gameObject = GetNextRental();
+            var transform  = gameObject.transform;
+            transform.SetPositionAndRotation(position, rotation);
+            transform.SetParent(parent, worldPositionStays: true);
+            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
             policy?.Rent(gameObject, this);
             return gameObject;
         }
@@ -136,6 +133,19 @@ namespace NewBlood
 
             // Attach the object to the container. This will deactivate the object.
             obj.transform.SetParent(container);
+        }
+
+        GameObject GetNextRental()
+        {
+            // The container stores all of our pooled objects, so first check that.
+            int count = container.childCount;
+
+            if (count == 0)
+                return Create();
+
+            // It is less expensive to detach the last child in the hierarchy.
+            // Children further up require reordering the internal structures.
+            return container.GetChild(count - 1).gameObject;
         }
 
         /// <inheritdoc/>
