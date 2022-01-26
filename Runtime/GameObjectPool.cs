@@ -53,14 +53,12 @@ namespace NewBlood
                 objectHierarchyCount = prefab.transform.hierarchyCount;
         }
 
-    #if UNITY_EDITOR
         /// <summary>A value indicating whether the container transform is visible in the editor hierarchy.</summary>
         public bool HideContainer
         {
             get => container.hideFlags.HasFlag(HideFlags.HideInHierarchy);
             set => container.hideFlags = value ? HideFlags.HideAndDontSave : HideFlags.DontSave;
         }
-    #endif
 
         /// <inheritdoc/>
         public int Capacity
