@@ -147,7 +147,10 @@ namespace NewBlood
             var transform  = gameObject.transform;
             transform.SetPositionAndRotation(position, rotation);
             transform.SetParent(parent, worldPositionStays: true);
-            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+
+            if (parent == null)
+                SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+
             policy?.Rent(gameObject, this);
             return gameObject;
         }
@@ -161,7 +164,10 @@ namespace NewBlood
             transform.SetPositionAndRotation(position, rotation);
             callback(gameObject, state);
             transform.SetParent(parent, worldPositionStays: true);
-            SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+
+            if (parent == null)
+                SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene());
+
             policy?.Rent(gameObject, this);
             return gameObject;
         }
