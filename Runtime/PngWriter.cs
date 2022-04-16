@@ -29,7 +29,7 @@ namespace NewBlood
         /// <summary>Calculates the CRC and writes a chunk to the buffer writer.</summary>
         public void WriteChunk(uint id, ReadOnlySpan<byte> buffer)
         {
-            WriteChunk(id, PngCrcAlgorithm.Compute(PngCrcAlgorithm.Compute(id), buffer), buffer);
+            WriteChunk(id, PngCrc32.Compute(PngCrc32.Compute(id), buffer), buffer);
         }
 
         /// <summary>Writes a chunk to the buffer writer.</summary>

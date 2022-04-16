@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace NewBlood
 {
     /// <summary>Implements the cyclic redundancy check algorithm used for PNG chunks.</summary>
-    static class PngCrcAlgorithm
+    public static class PngCrc32
     {
         /// <summary>Computes the CRC value for an unmanaged value.</summary>
         public static unsafe uint Compute<T>(T value)
